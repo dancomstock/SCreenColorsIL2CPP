@@ -1,6 +1,8 @@
-﻿using MelonLoader;
+﻿using System.Collections;
+using MelonLoader;
 using SCreenSignCommandsIL2CPP;
 using UnityEngine;
+using static MelonLoader.MelonLogger;
 
 [assembly: MelonInfo(typeof(SCreenColorsIL2CPP.Core), "SCreenColorsIL2CPP", "1.0.0", "animandan", null)]
 [assembly: MelonGame("TVGS", "Schedule I")]
@@ -12,15 +14,19 @@ namespace SCreenColorsIL2CPP
         public override void OnInitializeMelon()
         {
             LoggerInstance.Msg("Initialized.");
-            SignCommand signColors = new SignCommand("/color", "sets colors for signs", signcolor);
+            //SignCommand signColors = new SignCommand("/colors", "sets colors for signs", signcolor);
             //MelonMod.GetModInstance<SCreenSignCommandsIL2CPP.Core>();
-            Melon<SCreenSignCommandsIL2CPP.Core>.Instance.register_command("/colors", "Choose Sign Colors", signcolor);
+            Melon<SCreenSignCommandsIL2CPP.Core>.Instance.register_command("/color", "Choose Sign Colors", signcolor);
         }
 
-        public string signcolor(Il2CppScheduleOne.EntityFramework.LabelledSurfaceItem instance)
+        public IEnumerator signcolor(Il2CppScheduleOne.EntityFramework.LabelledSurfaceItem instance)
         {
-            try
-            {
+            Melon<Core>.Logger.Msg($"Inside {instance} sign color");
+            Melon<SCreenSignCommandsIL2CPP.Core>.Instance.runningLabels[instance.GetInstanceID()] = "locked";
+            yield return null;
+            string result = "";
+            //try
+            //{
                 string message = instance.Message;
                 var args = SignCommand.getArgs(instance);
                 if (args.ContainsKey("signcolor"))
@@ -31,7 +37,12 @@ namespace SCreenColorsIL2CPP
                     {
                         //Color color = instance.transform.parent.gameObject.GetComponentInChildren<MeshRenderer>().material.color;
                         //instance.transform.parent.gameObject.GetComponentInChildren<MeshRenderer>().material.color = rgb_cycle(instance.transform.parent.gameObject.GetComponentInChildren<MeshRenderer>().material.color);
-                        material.color = rgb_cycle(material.color);
+                        while (instance.Message != "stop")
+                        {
+                            yield return null;
+                            material.color = rgb_cycle(material.color);
+                        }
+                        
                     }
                     else 
                     {
@@ -61,13 +72,16 @@ namespace SCreenColorsIL2CPP
                     }
 
                 }
-                return args.GetValueOrDefault("remaining_text", "");
-            }
-            catch (System.Exception ex)
-            {
-                Melon<Core>.Logger.Msg($"error: {ex}");
-                return ex.ToString();
-            }
+                result = args.GetValueOrDefault("remaining_text", "");
+            //}
+            //catch (System.Exception ex)
+            //{
+            //    Melon<Core>.Logger.Msg($"error: {ex}");
+            //    result = ex.ToString();
+            //}
+            instance.Label.text = result;
+            Melon<SCreenSignCommandsIL2CPP.Core>.Instance.runningLabels[instance.GetInstanceID()] = "unlocked";
+            //yield return result;
         }
 
         public Color rgb_cycle(Color currentColor)
