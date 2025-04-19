@@ -19,15 +19,13 @@ namespace SCreenColorsIL2CPP
             Melon<SCreenSignCommandsIL2CPP.Core>.Instance.register_command("/color", "Choose Sign Colors", signcolor);
         }
 
-        public IEnumerator signcolor(Il2CppScheduleOne.EntityFramework.LabelledSurfaceItem instance)
+        public async Task signcolor(Il2CppScheduleOne.EntityFramework.LabelledSurfaceItem instance)
         {
             Melon<Core>.Logger.Msg($"Inside {instance} sign color");
-            Melon<SCreenSignCommandsIL2CPP.Core>.Instance.runningLabels[instance.GetInstanceID()] = "locked";
-            yield return null;
+            //Melon<SCreenSignCommandsIL2CPP.Core>.Instance.runningLabels[instance.GetInstanceID()] = "locked";
             string result = "";
             //try
             //{
-                string message = instance.Message;
                 var args = SignCommand.getArgs(instance);
                 if (args.ContainsKey("signcolor"))
                 {
@@ -35,11 +33,13 @@ namespace SCreenColorsIL2CPP
                     string[] arg = args["signcolor"].Split(",");
                     if (arg[0] == "rgb")
                     {
+                        instance.Label.text = args.GetValueOrDefault("remaining_text", "");
                         //Color color = instance.transform.parent.gameObject.GetComponentInChildren<MeshRenderer>().material.color;
                         //instance.transform.parent.gameObject.GetComponentInChildren<MeshRenderer>().material.color = rgb_cycle(instance.transform.parent.gameObject.GetComponentInChildren<MeshRenderer>().material.color);
                         while (instance.Message != "stop")
                         {
-                            yield return null;
+                            //await Task.Yield();
+                            await Task.Delay(1000);
                             material.color = rgb_cycle(material.color);
                         }
                         
@@ -80,7 +80,7 @@ namespace SCreenColorsIL2CPP
             //    result = ex.ToString();
             //}
             instance.Label.text = result;
-            Melon<SCreenSignCommandsIL2CPP.Core>.Instance.runningLabels[instance.GetInstanceID()] = "unlocked";
+            //Melon<SCreenSignCommandsIL2CPP.Core>.Instance.runningLabels[instance.GetInstanceID()] = "unlocked";
             //yield return result;
         }
 
