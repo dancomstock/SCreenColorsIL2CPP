@@ -19,7 +19,6 @@ namespace SCreenColorsIL2CPP
 
         public IEnumerator signcolor(Il2CppScheduleOne.EntityFramework.LabelledSurfaceItem instance)
         {
-            //Melon<Core>.Logger.Msg($"Inside {instance} sign color");
             yield return null;
             string result = "";
             bool signRgbFlag = false;
@@ -31,35 +30,25 @@ namespace SCreenColorsIL2CPP
                 var args = SignCommand.getArgs(instance);
                 if (args.ContainsKey("signcolor"))
                 {
-                    string[] arg = args["signcolor"].Split(",");
-                    if (arg[0] == "rgb")
+                    if (args["signcolor"] == "rgb")
                     {
                         signRgbFlag = true;
                     }
                     else 
                     {
-                        float r = float.Parse(arg[0]) / 255f;
-                        float g = float.Parse(arg[1]) / 255f;
-                        float b = float.Parse(arg[2]) / 255f;
-                        float a = float.Parse(arg[3]);
-                        material.color = new Color(r, g, b, a);
+                        material.color = StringToColor(args["signcolor"]);
                     }
                 }
 
                 if (args.ContainsKey("textcolor"))
                 {
-                    string[] arg = args["textcolor"].Split(",");
-                    if (arg[0] == "rgb")
+                    if (args["textcolor"] == "rgb")
                     {
                         textrRgbFlag = true;
                     }
                     else
                     {
-                        float r = float.Parse(arg[0]) / 255f;
-                        float g = float.Parse(arg[1]) / 255f;
-                        float b = float.Parse(arg[2]) / 255f;
-                        float a = float.Parse(arg[3]);
-                        instance.Label.color = new Color(r, g, b, a);
+                        instance.Label.color = StringToColor(args["textcolor"]);
                     }
                 }
                 result = args.GetValueOrDefault("remaining_text", "");
@@ -75,8 +64,8 @@ namespace SCreenColorsIL2CPP
                 while (instance.Message.Contains("signcolor=rgb") || instance.Message.Contains("textcolor=rgb"))
                 {
                     yield return null;
-                    //yield return new WaitForSeconds(Melon<Core>.Instance.waittime);
                     var args = SignCommand.getArgs(instance);
+                    //yield return new WaitForSeconds(args.GetValueOrDefault(waittime));
                     instance.Label.text = args.GetValueOrDefault("remaining_text", "");
 
                     if (instance.Message.Contains("signcolor=rgb"))
@@ -89,7 +78,6 @@ namespace SCreenColorsIL2CPP
                     }
                 }
             }
-            //yield return result;
         }
 
         public Color rgb_cycle(Color currentColor)
@@ -102,12 +90,44 @@ namespace SCreenColorsIL2CPP
             H += 1f + Time.deltaTime;
             if (H > 1f)
             {
-                // we subtract 1 instead of setting to zero to preserve the tiny value that overshoots 1
-                // for eg. if currentHue is 1.014, this will make it 0.014. This makes more of a difference
-                //   than you might think!
                 H -= 1f;
             }
             return Color.HSVToRGB(H, S, V);
+        }
+
+        public Color StringToColor(string colorString)
+        {
+            if (string.IsNullOrWhiteSpace(colorString))
+                throw new System.ArgumentException("Color string cannot be null or empty.");
+
+            // Check for named colors
+            if (ColorUtility.TryParseHtmlString(colorString, out Color namedColor))
+            {
+                return namedColor;
+            }
+
+            // Check for hexadecimal color codes
+            if (colorString.StartsWith("#") || colorString.Length == 6 || colorString.Length == 8)
+            {
+                if (ColorUtility.TryParseHtmlString(colorString.StartsWith("#") ? colorString : $"#{colorString}", out Color hexColor))
+                {
+                    return hexColor;
+                }
+            }
+
+            // Check for RGBA values
+            string[] rgba = colorString.Split(',');
+            if (rgba.Length == 4)
+            {
+                Melon<Core>.Logger.Msg($"RGBA: {rgba[0]}, {rgba[1]}, {rgba[2]}, {rgba[3]}");
+                float r = float.Parse(rgba[0]) / 255f;
+                float g = float.Parse(rgba[1]) / 255f;
+                float b = float.Parse(rgba[2]) / 255f;
+                float a = float.Parse(rgba[3]);
+                return new Color(r, g, b, a);
+            }
+
+            throw new System.FormatException($"Invalid color string format: {colorString}");
         }
     }
 }
