@@ -14,35 +14,27 @@ namespace SCreenColorsIL2CPP
         public override void OnInitializeMelon()
         {
             LoggerInstance.Msg("Initialized.");
-            //SignCommand signColors = new SignCommand("/colors", "sets colors for signs", signcolor);
-            //MelonMod.GetModInstance<SCreenSignCommandsIL2CPP.Core>();
             Melon<SCreenSignCommandsIL2CPP.Core>.Instance.register_command("/color", "Choose Sign Colors", signcolor);
         }
 
         public IEnumerator signcolor(Il2CppScheduleOne.EntityFramework.LabelledSurfaceItem instance)
         {
-            Melon<Core>.Logger.Msg($"Inside {instance} sign color");
-            Melon<SCreenSignCommandsIL2CPP.Core>.Instance.runningLabels[instance.GetInstanceID()] = "locked";
+            //Melon<Core>.Logger.Msg($"Inside {instance} sign color");
             yield return null;
             string result = "";
-            //try
-            //{
+            bool signRgbFlag = false;
+            bool textrRgbFlag = false;
+            var material = instance.gameObject.GetComponentInChildren<MeshRenderer>().material;
+            try
+            {
                 string message = instance.Message;
                 var args = SignCommand.getArgs(instance);
                 if (args.ContainsKey("signcolor"))
                 {
-                    var material = instance.transform.parent.gameObject.GetComponentInChildren<MeshRenderer>().material;
                     string[] arg = args["signcolor"].Split(",");
                     if (arg[0] == "rgb")
                     {
-                        //Color color = instance.transform.parent.gameObject.GetComponentInChildren<MeshRenderer>().material.color;
-                        //instance.transform.parent.gameObject.GetComponentInChildren<MeshRenderer>().material.color = rgb_cycle(instance.transform.parent.gameObject.GetComponentInChildren<MeshRenderer>().material.color);
-                        while (instance.Message != "stop")
-                        {
-                            yield return null;
-                            material.color = rgb_cycle(material.color);
-                        }
-                        
+                        signRgbFlag = true;
                     }
                     else 
                     {
@@ -50,7 +42,6 @@ namespace SCreenColorsIL2CPP
                         float g = float.Parse(arg[1]) / 255f;
                         float b = float.Parse(arg[2]) / 255f;
                         float a = float.Parse(arg[3]);
-                        //instance.transform.parent.gameObject.GetComponentInChildren<MeshRenderer>().material.color = new Color(r, g, b, a);
                         material.color = new Color(r, g, b, a);
                     }
                 }
@@ -60,7 +51,7 @@ namespace SCreenColorsIL2CPP
                     string[] arg = args["textcolor"].Split(",");
                     if (arg[0] == "rgb")
                     {
-                        instance.Label.color = rgb_cycle(instance.Label.color);
+                        textrRgbFlag = true;
                     }
                     else
                     {
@@ -70,17 +61,34 @@ namespace SCreenColorsIL2CPP
                         float a = float.Parse(arg[3]);
                         instance.Label.color = new Color(r, g, b, a);
                     }
-
                 }
                 result = args.GetValueOrDefault("remaining_text", "");
-            //}
-            //catch (System.Exception ex)
-            //{
-            //    Melon<Core>.Logger.Msg($"error: {ex}");
-            //    result = ex.ToString();
-            //}
+            }
+            catch (System.Exception ex)
+            {
+                Melon<Core>.Logger.Msg($"error: {ex}");
+                result = ex.ToString();
+            }
             instance.Label.text = result;
-            Melon<SCreenSignCommandsIL2CPP.Core>.Instance.runningLabels[instance.GetInstanceID()] = "unlocked";
+            if (signRgbFlag || textrRgbFlag)
+            {
+                while (instance.Message.Contains("signcolor=rgb") || instance.Message.Contains("textcolor=rgb"))
+                {
+                    yield return null;
+                    //yield return new WaitForSeconds(Melon<Core>.Instance.waittime);
+                    var args = SignCommand.getArgs(instance);
+                    instance.Label.text = args.GetValueOrDefault("remaining_text", "");
+
+                    if (instance.Message.Contains("signcolor=rgb"))
+                    {
+                        material.color = rgb_cycle(material.color);
+                    }
+                    if (instance.Message.Contains("textcolor=rgb"))
+                    {
+                        instance.Label.color = rgb_cycle(instance.Label.color);
+                    }
+                }
+            }
             //yield return result;
         }
 
